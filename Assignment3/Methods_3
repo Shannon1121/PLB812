@@ -1,0 +1,15 @@
+
+To view my fastqc files, I pulled the files from my repository to my local computer using “git pull.” This allowed me to open the PLB812 and directly open the .html’s in my browser. 
+Most my sequencing results looked good after position 13, presumably due to polyA tailing as all the results showed almost zero% adapter content. Only ERR754083_1 and - _2 had vary erratic reads. As such, these two sequences had lower Phred scores than the others dipping below an acceptable score of 30. 
+
+I decided to trim off bases with quality scores less than 10 based on my specific sequences and the fact that 10 is considered a bad read. I did not account for any leftover adapter sequence because all my samples showed close to 0% carry over.
+
+I downloaded the trimmomatic program using “conda install -c bioconda trimmomatic” 
+
+For my code, I did a loop system where it would trim and perform fastqc analysis on each fastq sequence defined in my list. The resulting .html and .zip files were output into a new designated folder. 
+
+To add a new branch for Assignment3, I did the following commands: 
+1. Git branch Assignment3
+2. Git checkout Assignment3
+3. Git add Assignment3
+4. Git commit Assignment
