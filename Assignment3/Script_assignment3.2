@@ -14,13 +14,13 @@ cd ${PBS_O_WORKDIR}
 export PATH="${HOME}/miniconda3/envs/PLB812/bin:${PATH}"
 export LD_LIBRARY_PATH="${HOME}/miniconda3/envs/PLB812/lib:${LD_LIBRARY_PATH}"
 
-fastq_list="ERR754071_2.fastq ERR754071_1.fastq ERR754061_1.fastq ERR754061_2.fastq ERR754065_1.fastq ERR754065_2.fastq ERR754082_1.fastq ERR754082_2.fastq ERR754083_1.fastq ERR754083_2.fastq ERR754090_1.fastq ERR754090_2.fastq"     
+fastq_list="ERR754071_2.fastq ERR754071_1.fastq ERR754061_1.fastq ERR754061_2.fastq ERR754065_1.fastq ERR754065_2.fastq ERR754082_1.fastq ERR754082_2.fastq ERR754083_1.fastq ERR754083_2.fastq ERR754090_1.fastq ERR754090_2.fastq"
 
 for fastq in ${fastq_list}
 
 do
 
-trimmomatic PE -threads 10 -phred33 ${fastq} trimmed.fastq ILLUNMINACLIP:TruSeq3-PE.fa:2:30:10 MINLEN:13 
+trimmomatic PE -threads 20 -phred33 -trimlog Logfile -basein ${fastq} -baseout fastqctrimmed.fq.gz ILLUMINACLIP:${fastq}:2:30:7 TRAILING:10 HEADCROP:12 MINLEN:10
 
 fastqc -f fastq -o /mnt/home/donne164/SRA_Results/fastq_Results/PLB812_git/PLB812/Lab_assignment/Assignment3/fastqc_trimmed_results ./*
 
