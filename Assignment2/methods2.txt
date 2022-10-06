@@ -1,0 +1,24 @@
+
+To install fastqc, I used the code: conda search -c bioconda fastqc. This provided me with every available version of fastqc for download. I downloaded the program into my PLB812 environment (before all this I activated the env using conda activate PLB812) using conda install -c bioconda fastqc. 
+	Once the program was installed in my conda env, I started to write out the job script that will run my fastqc. 
+	Working within my Assignment1 directory, which contains my SRA files, etc, I ran the following code:
+
+#!/bin/bash --login 
+#SBATCH --time=168:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=1
+#SBATCH --mem=100GB
+#SBATCH --job-name Donnelly_fastqc_Results
+#SBATCH --output=%x-%j.SLURMout
+
+cd ${PBS_O_WORKDIR}
+
+export PATH="${HOME}/miniconda3/envs/PLB812/bin:${PATH}"
+export LD_LIBRARY_PATH="${HOME}/miniconda3/envs/PLB812/lib:${LD_LIBRARY_PATH}"
+
+fastqc -f fastq -o /mnt/home/donne164/SRA_Results/fastq_Results/PLB812_git/PLB812/Lab_assignment/Assignment1/fastqc_results ./*
+
+I made it so that all files with the “.fastqc” extension (i.e., the results from my code) would output into a designated folder titled “fastqc_results”. 
+
+I then did git add, push, and commit to upload the assignment onto my GitHub repository. 
