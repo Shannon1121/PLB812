@@ -1,0 +1,72 @@
+1. Determine the stranded of FASTQ files 
+	- download RseQC using miniconda 
+		https://chipster.csc.fi/manual/rseqc_infer_rnaseq_experiment.html
+		https://rseqc.sourceforge.net/#infer-experiment-py <-- manual
+		If your results are non-stranded, the explanation between paired files will be ~50:50
+		If stranded, either fastq_1 or fastq_2 encompass 100%
+			If fastq_2 is the whole, it is reverse stranded.
+	-I could not get RseQC to work. Is this an R program? unsure. 
+1. Run htseq (assumes stranded) 
+	-Previously (when I generated my bam files) the script used had already sorted the files by name using samtools
+		-If that was not previously done, you need to do it and define how it was sorted in htseq (--order)
+		http://www.htslib.org/doc/samtools-sort.html
+	- " htseq-count --format bam --order name <.bam file> <annotation file .gtf> ">" outputfile.txt 
+		you need > after .gtf to define that you want an output file
+2. Analyze htseq results
+	-the output is a large vi file 
+	-use "tail <output file>" to see only the tabled contents (i.e, no feature, ambiguous, etc.)
+3. Build a table in Excel using htseq results (i.e., your read counts)
+4. Import Excel file into R 
+	-this was quite easy - I was able to upload from my local computer using the bottom right panel
+5. Follow the code below from R
+	- an important note is to set your working directory where the .txt files are : right click on the file in the top left and set directory 
+	-change variables from "Control", "Drought" to whatever you are working with
+
+Code for R:
+setwd("C:/Users/shann/Desktop/PLB812/Assignment5/")
+> sampleFiles <- list.files("count_data")
+> sampleTable <- data.frame(sampleName = sub(".txt","",sampleFiles),
++                           fileName = sampleFiles,
++                           genotype = sub("-..txt","",sampleFiles))
+> sampleTable$genotype <- factor(sampleTable$genotype)
+> #Load DESeq2
+> library(DESeq2)
+>dds <- DESeqDataSetFromHTSeqCount(sampleTable = sampleTable,
++                                   directory = "count_data",
++                                   design= ~ genotype)
+> dds$genotype <- relevel(dds$genotype, ref = "Control")
+>dds
+class: DESeqDataSet 
+dim: 27655 5 
+metadata(1): version
+assays(1): counts
+rownames(27655): AT1G01010.Araport11.447
+  AT1G01020.Araport11.447 ... ATMG01400.Araport11.447
+  ATMG01410.Araport11.447
+rowData names(0):
+colnames(5): Control-1 Control-2 Drought-1 Drought-2
+  Drought-3
+colData names(1): genotype
+> keep <- rowSums(counts(dds)) >= 10
+> dds <- dds[keep,]
+> dds
+class: DESeqDataSet 
+dim: 18774 5 
+metadata(1): version
+assays(1): counts
+rownames(18774): AT1G01010.Araport11.447
+  AT1G01020.Araport11.447 ... ATMG01360.Araport11.447
+  ATMG01370.Araport11.447
+rowData names(0):
+colnames(5): Control-1 Control-2 Drought-1 Drought-2
+  Drought-3
+colData names(1): genotype
+#Prefilter> keep <- rowSums(counts(dds)) >= 10> dds <- dds[keep,]> #Show the dds object> ddsclass: DESeqDataSet dim: 19174 5 metadata(1): versionassays(1): countsrownames(19174): AT1G01010.Araport11.447 AT1G01020.Araport11.447 ... ATMG01360.Araport11.447  ATMG01370.Araport11.447rowData names(0):colnames(5): Control-1 Control-2 Drought-1 Drought-2 Drought-3colData names(1): genotype> #Estimate Size Factor - library size> dds <- estimateSizeFactors(dds)> #Show the library size adjustment> dds$sizeFactorControl-1 Control-2 Drought-1 Drought-2 Drought-3 0.6735330 1.2191054 0.8097282 0.9636470 1.5952652 > #Estimate the dispersion> #This estimates the dispersion per gene> dds <- estimateDispersions(dds)gene-wise dispersion estimatesmean-dispersion relationshipfinal dispersion estimates> #Plot out the dispersions> plotDispEsts(dds)> BiocManager::install("pheatmap")
+> BiocManager::install("RColorBrewer")
+vsd <- vst(dds, blind=FALSE)> rld <- rlog(dds, blind=FALSE)> #Calculate distance between samples> sampleDists <- dist(t(assay(vsd)))> #Plot sample heatmap> library(pheatmap)> library(RColorBrewer)> sampleDistMatrix <- as.matrix(sampleDists)> rownames(sampleDistMatrix) <- paste(colnames(vsd), vsd$type)> colnames(sampleDistMatrix) <- NULL> colors <- colorRampPalette( rev(brewer.pal(9, "Blues")) )(255)> pheatmap(sampleDistMatrix,+          clustering_distance_rows=sampleDists,+          clustering_distance_cols=sampleDists,+          col=colors)> #PCA of the samples> plotPCA(vsd, intgroup=c("genotype"))> dds <- nbinomWaldTest(dds)> #Extract results for a pair-wise contrast> resultsTable <- as.data.frame(results(dds, contrast=c("genotype","Control","Drought")))> head(resultsTable)                        baseMean log2FoldChange     lfcSE        stat    pvalue      padjAT1G01010.Araport11.447  38.1948    -0.01033765 0.4149691 -0.02491186 0.9801253 0.9999671AT1G01020.Araport11.447 243.9593    -0.01239139 0.2571835 -0.04818113 0.9615719 0.9999671AT1G01030.Araport11.447 106.7095     0.17265123 0.3005352  0.57447930 0.5656435 0.9999671AT1G01040.Araport11.447 571.2344    -0.04107259 0.2298867 -0.17866446 0.8582012 0.9999671AT1G01050.Araport11.447 344.5752     0.10463847 0.2100339  0.49819800 0.6183445 0.9999671AT1G01060.Araport11.447 259.0246     0.28713107 0.2393839  1.19945856 0.2303497 0.9999671> #Show how many genes padj < 0.05> nrow(na.omit(resultsTable[resultsTable$padj < 0.05,]))[1] 0
+> #Genes with 2-fold change> nrow(na.omit(resultsTable[resultsTable$padj < 0.05 & resultsTable$log2FoldChange >= 1 | resultsTable$padj < 0.05 & resultsTable$log2FoldChange <= -1,]))[1] 0> #Volcano Plot> plotMA(results(dds, contrast=c("genotype","Control","Drought")), ylim=c(-2,2))> makeResultsTable <- function(x,compFactor,conditionA,conditionB,lfcThreshold=0,filter=FALSE){+     require(DESeq2)+     bml <- sapply(levels(dds@colData[,compFactor]),function(lvl) rowMeans(counts(dds,+                                                                                  normalized=TRUE)[,dds@colData[,compFactor] == lvl]))+     bml <- as.data.frame(bml)+     y <- results(x,contrast=c(compFactor,conditionA,conditionB),+                  lfcThreshold=lfcThreshold,independentFiltering=filter)+     y <- data.frame(id=gsub(pattern = "gene:",replacement = "",row.names(y)),+                     sampleA=c(conditionA),sampleB=c(conditionB),+                     baseMeanA=bml[,conditionA],baseMeanB=bml[,conditionB],+                     log2FC=y$log2FoldChange,pval=y$pvalue,padj=y$padj)+     row.names(y) <- c(1:nrow(y))+     return(y)+ }> res <- makeResultsTable(dds,"genotype","WT","h3h3",lfcThreshold=0,filter=TRUE) Error in cleanContrast(object, contrast, expanded = isExpanded, listValues = listValues, : WT and h3h3 should be levels of genotype such that genotype_WT_vs_Control and genotype_h3h3_vs_Control are contained in 'resultsNames(object)' > res <- makeResultsTable(dds,"genotype","Control","Drought",lfcThreshold=0,filter=TRUE)> head(res)                       id sampleA sampleB baseMeanA baseMeanB      log2FC      pval      padj1 AT1G01010.Araport11.447 Control Drought  37.83528  38.43448 -0.01033765 0.9801253 0.99996712 AT1G01020.Araport11.447 Control Drought 243.01552 244.58855 -0.01239139 0.9615719 0.99996713 AT1G01030.Araport11.447 Control Drought 114.38351 101.59345  0.17265123 0.5656435 0.99996714 AT1G01040.Araport11.447 Control Drought 560.48684 578.39948 -0.04107259 0.8582012 0.99996715 AT1G01050.Araport11.447 Control Drought 360.11414 334.21588  0.10463847 0.6183445 0.99996716 AT1G01060.Araport11.447 Control Drought 289.47150 238.72661  0.28713107 0.2303497 0.9999671> #Create a column where 1 = meets cutoff, 0 = does not meet cutoff> res$sig <- ifelse(res$padj < 0.05 & res$log2FC >= 1 & !is.na(res$padj) | res$padj < 0.05 & res$log2FC <= -1 & !is.na(res$padj) , "DE", "notDE")> head(res)
+ id sampleA sampleB baseMeanA baseMeanB      log2FC      pval      padj   sig1 AT1G01010.Araport11.447 Control Drought  37.83528  38.43448 -0.01033765 0.9801253 0.9999671 notDE2 AT1G01020.Araport11.447 Control Drought 243.01552 244.58855 -0.01239139 0.9615719 0.9999671 notDE3 AT1G01030.Araport11.447 Control Drought 114.38351 101.59345  0.17265123 0.5656435 0.9999671 notDE4 AT1G01040.Araport11.447 Control Drought 560.48684 578.39948 -0.04107259 0.8582012 0.9999671 notDE5 AT1G01050.Araport11.447 Control Drought 360.11414 334.21588  0.10463847 0.6183445 0.9999671 notDE6 AT1G01060.Araport11.447 Control Drought 289.47150 238.72661  0.28713107 0.2303497 0.9999671 notDE> table(res$sig)notDE 19174 
+> BiocManager::install("ggplot2")
+> res <- makeResultsTable(dds,"genotype","Control","Drought",lfcThreshold=0,filter=TRUE)> head(res)                       id sampleA sampleB baseMeanA baseMeanB      log2FC      pval      padj1 AT1G01010.Araport11.447 Control Drought  37.83528  38.43448 -0.01033765 0.9801253 0.99996712 AT1G01020.Araport11.447 Control Drought 243.01552 244.58855 -0.01239139 0.9615719 0.99996713 AT1G01030.Araport11.447 Control Drought 114.38351 101.59345  0.17265123 0.5656435 0.99996714 AT1G01040.Araport11.447 Control Drought 560.48684 578.39948 -0.04107259 0.8582012 0.99996715 AT1G01050.Araport11.447 Control Drought 360.11414 334.21588  0.10463847 0.6183445 0.99996716 AT1G01060.Araport11.447 Control Drought 289.47150 238.72661  0.28713107 0.2303497 0.9999671> #Create a column where 1 = meets cutoff, 0 = does not meet cutoff> res$sig <- ifelse(res$padj < 0.05 & res$log2FC >= 1 & !is.na(res$padj) | res$padj < 0.05 & res$log2FC <= -1 & !is.na(res$padj) , "DE", "notDE")> head(res)                       id sampleA sampleB baseMeanA baseMeanB      log2FC      pval      padj   sig1 AT1G01010.Araport11.447 Control Drought  37.83528  38.43448 -0.01033765 0.9801253 0.9999671 notDE2 AT1G01020.Araport11.447 Control Drought 243.01552 244.58855 -0.01239139 0.9615719 0.9999671 notDE3 AT1G01030.Araport11.447 Control Drought 114.38351 101.59345  0.17265123 0.5656435 0.9999671 notDE4 AT1G01040.Araport11.447 Control Drought 560.48684 578.39948 -0.04107259 0.8582012 0.9999671 notDE5 AT1G01050.Araport11.447 Control Drought 360.11414 334.21588  0.10463847 0.6183445 0.9999671 notDE6 AT1G01060.Araport11.447 Control Drought 289.47150 238.72661  0.28713107 0.2303497 0.9999671 notDE> table(res$sig)notDE 19174 
+ library(ggplot2)> res <- makeResultsTable(dds,"genotype","Control","Drought",lfcThreshold=0,filter=TRUE)> head(res)                       id sampleA sampleB baseMeanA baseMeanB      log2FC      pval      padj1 AT1G01010.Araport11.447 Control Drought  37.83528  38.43448 -0.01033765 0.9801253 0.99996712 AT1G01020.Araport11.447 Control Drought 243.01552 244.58855 -0.01239139 0.9615719 0.99996713 AT1G01030.Araport11.447 Control Drought 114.38351 101.59345  0.17265123 0.5656435 0.99996714 AT1G01040.Araport11.447 Control Drought 560.48684 578.39948 -0.04107259 0.8582012 0.99996715 AT1G01050.Araport11.447 Control Drought 360.11414 334.21588  0.10463847 0.6183445 0.99996716 AT1G01060.Araport11.447 Control Drought 289.47150 238.72661  0.28713107 0.2303497 0.9999671> #Create a column where 1 = meets cutoff, 0 = does not meet cutoff> res$sig <- ifelse(res$padj < 0.05 & res$log2FC >= 1 & !is.na(res$padj) | res$padj < 0.05 & res$log2FC <= -1 & !is.na(res$padj) , "DE", "notDE")> head(res)                       id sampleA sampleB baseMeanA baseMeanB      log2FC      pval      padj   sig1 AT1G01010.Araport11.447 Control Drought  37.83528  38.43448 -0.01033765 0.9801253 0.9999671 notDE2 AT1G01020.Araport11.447 Control Drought 243.01552 244.58855 -0.01239139 0.9615719 0.9999671 notDE3 AT1G01030.Araport11.447 Control Drought 114.38351 101.59345  0.17265123 0.5656435 0.9999671 notDE4 AT1G01040.Araport11.447 Control Drought 560.48684 578.39948 -0.04107259 0.8582012 0.9999671 notDE5 AT1G01050.Araport11.447 Control Drought 360.11414 334.21588  0.10463847 0.6183445 0.9999671 notDE6 AT1G01060.Araport11.447 Control Drought 289.47150 238.72661  0.28713107 0.2303497 0.9999671 notDE> table(res$sig)notDE 19174 
+plotCounts(dds, gene="AT1G01130.Araport11.447", intgroup="genotype")> plotCounts(dds, gene="AT1G01130.Araport11.447", intgroup="genotype", returnData = TRUE)             count genotypeControl-1 45.04125  ControlControl-2 32.49067  ControlDrought-1 25.19965  DroughtDrought-2 25.40539  DroughtDrought-3 38.73816  Drought> pgazat <- plotCounts(dds, gene="AT1G01130.Araport11.447", intgroup="genotype", returnData = TRUE)> > View(sampleDistMatrix)> View(dds)> save.image("~/Desktop/PLB812/Assignment5/Assignment5_Plots.RData")> ggplot(res) + geom_point(aes(x=log2(baseMeanA),y=log2(baseMeanB),color=sig))There were 15 warnings (use warnings() to see them)> plotMA(results(dds, contrast=c("genotype","Control","Drought")), ylim=c(-2,2))> plotPCA(vsd, intgroup=c("genotype"))
