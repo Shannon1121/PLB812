@@ -1,0 +1,421 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2639
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fswiss\fcharset0 Helvetica-Bold;\f2\fnil\fcharset0 Menlo-Regular;
+\f3\fnil\fcharset0 Menlo-Bold;\f4\fnil\fcharset0 .AppleSystemUIFontMonospaced-Regular;}
+{\colortbl;\red255\green255\blue255;\red0\green0\blue0;\red27\green31\blue35;\red255\green255\blue255;
+}
+{\*\expandedcolortbl;;\csgray\c0;\cssrgb\c14118\c16078\c18431;\cssrgb\c100000\c100000\c100000;
+}
+\margl1440\margr1440\vieww13800\viewh15740\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Methods Assignment 6\
+\
+
+\f1\b In the last Assignment, my sequencing data revealed that there were no differentially expression genes using my original filtering parameters. However, when I changed by analysis from pad to pvalue, I found 286 DE genes. This is the set I moved forward with. 
+\f0\b0 \
+\
+Code: \
+> dds <- nbinomWaldTest(dds)\
+> resultsTable <- as.data.frame(results(dds, contrast=c("genotype","Control","Drought")))\
+> head(resultsTable)\
+                        baseMean log2FoldChange     lfcSE        stat    pvalue      padj\
+AT1G01010.Araport11.447  38.1948    -0.26824648 0.3995388 -0.67139038 0.5019719 0.9999954\
+AT1G01020.Araport11.447 243.9593    -0.28507706 0.2345425 -1.21546015 0.2241906 0.9999954\
+AT1G01030.Araport11.447 106.7095     0.17771253 0.2936495  0.60518578 0.5450556 0.9999954\
+AT1G01040.Araport11.447 571.2344     0.06326598 0.2196448  0.28803769 0.7733179 0.9999954\
+AT1G01050.Araport11.447 344.5752    -0.01181465 0.2024823 -0.05834903 0.9534706 0.9999954\
+AT1G01060.Araport11.447 259.0246     0.23958139 0.2360024  1.01516522 0.3100271 0.9999954\
+> nrow(na.omit(resultsTable[resultsTable$pvalue < 0.05,]))\
+[1] 286\
+> nrow(na.omit(resultsTable[resultsTable$padj < 0.05,]))\
+[1] 0\
+> nrow(na.omit(resultsTable[resultsTable$padj < 0.05 & resultsTable$log2FoldChange >= 1 | resultsTable$padj < 0.05 & resultsTable$log2FoldChange <= -1,]))\
+[1] 0\
+> nrow(na.omit(resultsTable[resultsTable$pvalue < 0.05 & resultsTable$log2FoldChange >= 1 | resultsTable$pvalue < 0.05 & resultsTable$log2FoldChange <= -1,]))\
+[1] 58\
+\
+
+\f1\b To export my table as a .txt file, I copy and pasted the resultsTable into Excel and saved it as a .txt file. \
+\
+I downloaded my GO terms via the command line through Phytozome. The correct list of terms was found under the_annotation_info.txt file. I had to format the file by following the code:\
+
+\f0\b0 \
+\pard\tx560\tx1120\tx1680\tx2240\tx2800\tx3360\tx3920\tx4480\tx5040\tx5600\tx6160\tx6720\pardirnatural\partightenfactor0
+
+\f2 \cf2 \CocoaLigature0 (base) ls\
+Athaliana_167_TAIR10.annotation_info.txt\
+(base) cut -f2 Athaliana_167_TAIR10.annotation_info.txt | sed '1d' | sort | uniq>gene_list\
+(base) wc -l Athaliana_167_TAIR10.annotation_info.txt \
+35387 Athaliana_167_TAIR10.annotation_info.txt\
+(base) wc -l gene_list\
+27416 gene_list\
+(base) ls\
+Athaliana_167_TAIR10.annotation_info.txt  gene_list\
+(base) cat gene_list | while read line do terms=$(grep $line Athaliana_167_TAIR10.annotation_info.txt | cut -f10 | tr ',' '\\n' | sort | uniq | sed '/^$/d' | tr '\\n' ',' | sed 's/\\,$//') echo "$line $terms" | tr ' ' '\\t' | sed 's/\\,/\\,/g' >> Athaliana_topGO.tsv done\
+\
+
+\f3\b Using the following code, I ran topGO. I still had to continue with the parameter changes (all pdaj calls were changed to pval < 0.1 . \
+
+\f2\b0\fs28 \
+setwd("~/Desktop/PLB812/Assignment5")\
+res <- read.table("deseq2_results.tsv",header=TRUE,sep="\\t")\
+table(res$sig)\
+ DE notDE \
+  114 19060 \
+goTerms <- readMappings(file="Athaliana_topGO.tsv")\
+upGenes <- factor(as.integer(res$id %in% res[res$pval < 0.1 & res$log2FC >= 1,]$id))\
+names(upGenes) <- res$id\
+table(upGenes)\
+upGenes\
+    0     1 \
+19135    39 \
+
+\f3\b I had to run this code line by line before it worked. I could not have just copied and pasted\'85\
+
+\itap1\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clmgf \clvertalt \clshdrawnil \clwWidth10636\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clmrg \clvertalt \clshdrawnil \clwWidth10636\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f4\b0\fs24 \cf3 \expnd0\expndtw0\kerning0
+\CocoaLigature1 I ran the codes for BP, MF, and CC (Chad\'92s GitHub)\
+CCgenTable <- GenTable(CC,Fisher=FisherCC,ranksOf="Fisher",\
++                        topNodes=length(score(FisherCC)))\
+> CCgenTable$Fisher<-gsub("< ","",CCgenTable$Fisher)\
+> CCgenTable$fdr <- p.adjust(CCgenTable$Fisher,method="fdr")\
+> GOdotplot <- function(x,fdr=0.05)\{\
++     require(ggplot2)\
++     x=head(x[x$fdr <= fdr,],10)\
++     ggplot(x[x$fdr <= fdr,],aes(x=Significant/Annotated,\
++                                 y=reorder(Term,Significant/Annotated))) + \
++         geom_point(aes(color=fdr,size=Significant)) + \
++         theme_bw() +\
++         scale_color_continuous(low="red",high="blue") +\
++         xlab("Gene Ratio (DEGs/Annotated Genes)") + \
++         ylab("") +\
++         labs(size="Gene Count",color="FDR") +\
++         ggtitle("Top 10 Enriched GO Terms")\
++ \}\
+> GOdotplot(MFgenTable)\
+\
+> if (!require("Rgraphviz", quietly = TRUE))\
++     BiocManager::install("Rgraphviz")\
+showSigOfNodes(MF, score(FisherMF), firstSigNodes = 20, useInfo = 'all')\
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrt\brdrnil \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clmgf \clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clmrg \clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3 topGO <- function(genelist,goTerms,nodeSize,fdr=0.05,filename,path="",returnData=FALSE)\{\nestcell 
+\pard\intbl\itap2\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   require(topGO)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   require(GO.db)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   ifelse(!dir.exists(path),dir.create(path), FALSE)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   BP <- new("topGOdata",description="Biological Process",ontology="BP",\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3             allGenes=genelist,annot=annFUN.gene2GO,nodeSize=nodeSize,gene2GO=goTerms)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   MF <- new("topGOdata",description="Molecular Function",ontology="MF",\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3             allGenes=genelist,annot=annFUN.gene2GO,nodeSize=nodeSize,gene2GO=goTerms)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   CC <- new("topGOdata",description="Cellular Compartment",ontology="CC",\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3             allGenes=genelist,annot=annFUN.gene2GO,nodeSize=nodeSize,gene2GO=goTerms)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   FisherBP <- runTest(BP,algorithm="parentchild",statistic="fisher")\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   FisherMF <- runTest(MF,algorithm="parentchild",statistic="fisher")\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   FisherCC <- runTest(CC,algorithm="parentchild",statistic="fisher")\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   BPgenTable <- GenTable(BP,Fisher=FisherBP,ranksOf="Fisher",\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3                          topNodes=length(score(FisherBP)))\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   BPgenTable$Fisher<-gsub("< ","",BPgenTable$Fisher)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   MFgenTable <- GenTable(MF,Fisher=FisherMF,ranksOf="Fisher",\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3                          topNodes=length(score(FisherMF)))\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   MFgenTable$Fisher<-gsub("< ","",MFgenTable$Fisher)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   CCgenTable <- GenTable(CC,Fisher=FisherCC,ranksOf="Fisher",\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3                          topNodes=length(score(FisherCC)))\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   CCgenTable$Fisher<-gsub("< ","",CCgenTable$Fisher)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   BPgenTable$fdr <- p.adjust(BPgenTable$Fisher,method="BH")\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   MFgenTable$fdr <- p.adjust(MFgenTable$Fisher,method="BH")\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   CCgenTable$fdr <- p.adjust(CCgenTable$Fisher,method="BH")\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   write.csv(BPgenTable[BPgenTable$fdr <= fdr,],paste(path,filename,"_BP.csv",sep=""),\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3             row.names=FALSE,quote=FALSE)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   ggsave(paste(path,filename,"_BP.pdf",sep=""),plot=GOdotplot(BPgenTable,fdr=fdr))\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   write.csv(MFgenTable[MFgenTable$fdr <= fdr,],paste(path,filename,"_MF.csv",sep=""),\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3             row.names=FALSE,quote=FALSE)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   ggsave(paste(path,filename,"_MF.pdf",sep=""),plot=GOdotplot(MFgenTable,fdr=fdr))\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   write.csv(CCgenTable[CCgenTable$fdr <= fdr,],paste(path,filename,"_CC.csv",sep=""),\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3             row.names=FALSE,quote=FALSE)\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   ggsave(paste(path,filename,"_CC.pdf",sep=""),plot=GOdotplot(CCgenTable,fdr=fdr))\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   if(returnData)\{\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3     return(list(BP=BPgenTable,MF=MFgenTable,CC=CCgenTable))\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3   \}\nestcell \nestrow
+
+\itap2\trowd \taflags1 \trgaph108\trleft-108 \trcbpat4 \trbrdrl\brdrnil \trbrdrt\brdrnil \trbrdrr\brdrnil 
+\clvertalt \clshdrawnil \clwWidth13455\clftsWidth3 \clminw1000 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx4320
+\clvertalt \clshdrawnil \clwWidth13010\clftsWidth3 \clbrdrt\brdrnil \clbrdrl\brdrnil \clbrdrb\brdrnil \clbrdrr\brdrnil \clpadl200 \clpadr200 \gaph\cellx8640
+\pard\intbl\itap2\pardeftab720\qr\partightenfactor0
+\cf3 \nestcell 
+\pard\intbl\itap2\pardeftab720\partightenfactor0
+\cf3 \}\nestcell \lastrow\nestrow
+\pard\intbl\itap1\pardeftab720\partightenfactor0
+
+\f1\b \cf3 To export my data sets as .tsv, I used the code: \
+
+\f0\b0 \
+write.table(BPgenTable, "higher_expressed_BP.tsv", sep="\\t", quote=FALSE)\
+> write.table(CCgenTable, "higher_expressed_CC.tsv", sep="\\t", quote=FALSE)\
+> write.table(MFgenTable, "higher_expressed_MF.tsv", sep="\\t", quote=FALSE)\cf0 \kerning1\expnd0\expndtw0 \cell 
+\pard\intbl\itap1\cell \lastrow\row
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+
+\f1\b I did all the same steps for down regulated genes with the EXCEPTION of changing log2FC to LESS than 0 rather than greater
+\f0\b0 \
+}
