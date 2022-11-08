@@ -1,0 +1,26 @@
+I already had the Arabidopsis genome downloaded and converted to a .gtf file from Assignment 4, so I just copied that into my new Assignment 7 directory. To download my fastq file, 
+
+	<  faster1-dump SRR___ > 
+
+I performed fastqc using, 
+	< fastqc -f fastq SRR492407_1.fastq >
+
+The reads were not high quality, so I trimmed the reads to only leave those higher than a shred score of 25 and then perroemd another fastqc report.
+
+	< trimmomatic PE -threads 20 -phred33 SRR492407_1.fastq SRR492407_2.fastq SRR492407_trimmed1P.fastq SRR492407_trimmed1UP.fastq SRR492407_trimmed2P.fastq SRR492407_trimmed2UP.fastq ILLUMINACLIP:TruSeq3-PE-2.fa:2:30:10:2:True SLIDINGWINDOW:4:25 >
+
+I re-did faastqc to be sure the trimming worked to eliminate the low quality bases. 
+
+The, I began to align my reads using BWA. 
+
+	< bwa mem -t 10 Athaliana_447_TAIR10.fa > SRR492407_trimmed1P.fastq SRR492407_trimmed2P.fastq > SRR492407.sam >
+
+I converted the .sam file output to a .bam file via samtools.
+
+< samtools sort SRR492407.sam -o SRR492407.bam -O bam -@ 10 >
+
+To understand the quality of my alignment, I ran flagstat to get my output statistics. 
+
+< samtools flagstate SRR492407.bam -o mapping_statistics.flagstat >
+
+
