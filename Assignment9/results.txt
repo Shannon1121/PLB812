@@ -1,0 +1,4 @@
+17,700 lines in file. 17,700 orthogroups found.
+
+I could not use the HAESA gene to look up rice orthogroups I believe because that gene was not identified in the analysis. So, I used grep on another gene: 
+AT1G68130.1  LOC_Os09g27650.2, LOC_Os08g36390.1 

@@ -1,0 +1,12 @@
+I installed orthofinder using bioconda. When I installed on my base env, it automatically created an orthofinder env. Once I activated this env, I downloaded three species through Phytzome (the protein_primaryTranscriptOnly.fa.gz) to run an analysis on. 
+
+To run orthofinder, the .fa.gz files had to be unzipped and placed in a new directory. Then, I called orthofinder on the directory where all the files were located via sbatch. 
+
+< orthofinder -f “Directory Name” >
+
+By results were in an outputted folder. From there, I used “wc” to determine how many lines, or orthogroups, were identified in the search. 
+
+
+
+
+
